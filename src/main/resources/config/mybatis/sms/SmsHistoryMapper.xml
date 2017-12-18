@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yundao.bs.mapper.sms.SmsHistoryMapper">
+  <insert id="insert" keyProperty="id" parameterType="com.yundao.bs.model.sms.SmsHistoryModel" useGeneratedKeys="true">
+    insert into sms_history
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+
+      <if test="tenantId != null">
+        tenant_id,
+      </if>
+      <if test="responseId != null">
+        response_id,
+      </if>
+      <if test="mobileStr != null">
+        mobile,
+      </if>
+      <if test="createDate != null">
+        create_date,
+      </if>
+      <if test="createUserId != null">
+        create_user_id,
+      </if>
+      <if test="isDelete != null">
+        is_delete,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="tenantId != null">
+        #{tenantId,jdbcType=BIGINT},
+      </if>
+      <if test="responseId != null">
+        #{responseId,jdbcType=BIGINT},
+      </if>
+      <if test="mobileStr != null">
+        ENCODE(#{mobileStr,jdbcType=VARCHAR},#{dbCodeKey}),
+      </if>
+      <if test="createDate != null">
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="createUserId != null">
+        #{createUserId,jdbcType=BIGINT},
+      </if>
+      <if test="isDelete != null">
+        #{isDelete,jdbcType=TINYINT},
+      </if>
+    </trim>
+  </insert>
+  
+  <select id="selectMinuteLimitForCaptcha" parameterType="map" resultType="String">
+    SELECT DECODE(mobile,#{params.dbCodeKey}) FROM sms_history WHERE
+    sign=#{params.sign} AND
+     <![CDATA[
+     create_date > #{params.dateTime}
+     ]]>
+    AND DECODE(mobile,#{params.dbCodeKey}) IN
+    <foreach collection="mobiles" item="mobile" separator="," close=")" open="(">
+      #{mobile}
+    </foreach>
+  </select>
+
+  <select id="selectHourLimit" parameterType="map" resultType="String">
+    SELECT DECODE(mobile,#{params.dbCodeKey}) FROM sms_history WHERE
+    sign=#{params.sign} AND
+    <![CDATA[
+    create_date > #{params.dateTime}
+     ]]>
+    AND DECODE(mobile,#{params.dbCodeKey}) IN
+    <foreach collection="mobiles" item="mobile" separator="," close=")" open="(">
+      #{mobile}
+    </foreach>
+    GROUP BY mobile HAVING COUNT(*)>4
+  </select>
+
+  <select id="selectDayLimit" parameterType="map" resultType="String">
+    SELECT DECODE(mobile,#{params.dbCodeKey}) FROM sms_history WHERE
+    sign=#{params.sign} AND
+    <![CDATA[
+     create_date > #{params.dateTime}
+     ]]>
+    AND DECODE(mobile,#{params.dbCodeKey}) IN
+    <foreach collection="mobiles" item="mobile" separator="," close=")" open="(">
+      #{mobile}
+    </foreach>
+    GROUP BY mobile HAVING COUNT(*)>${params.count}
+  </select>
+
+</mapper>
